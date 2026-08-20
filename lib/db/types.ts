@@ -70,6 +70,7 @@ export type OrderStatus =
   | "shipped"
   | "delivered"
   | "cancelled"
+  | "refund_requested"
   | "refunded"
   | "partially_refunded";
 
@@ -84,6 +85,9 @@ export interface OrderItem {
 export interface Order {
   id: string;
   userId: string;
+  // Denormalized at order-creation time so admin order views and archived
+  // (post user-deletion) orders can still show who placed them.
+  userEmail: string;
   items: OrderItem[];
   subtotalCents: number;
   taxCents: number;
@@ -92,6 +96,15 @@ export interface Order {
   status: OrderStatus;
   couponCode?: string;
   createdAt: string;
+  // Set when the placing user's account has been deleted by an admin. The
+  // order itself is preserved for historical/audit purposes rather than
+  // being deleted along with the user.
+  archived?: boolean;
+  // Populated while status === "refund_requested" so an admin can decide
+  // whether to issue the requested (possibly partial) refund or deny it
+  // and restore the prior status.
+  refundRequestedPartialCents?: number;
+  statusBeforeRefundRequest?: OrderStatus;
 }
 
 export interface Coupon {

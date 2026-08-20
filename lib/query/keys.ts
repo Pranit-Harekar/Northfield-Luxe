@@ -14,9 +14,14 @@ export const queryKeys = {
   },
   orders: {
     list: (userId: string) => ["orders", "list", userId] as const,
+    all: ["orders", "all"] as const,
     detail: (id: string) => ["orders", "detail", id] as const,
+  },
+  users: {
+    all: ["users", "all"] as const,
   },
   coupons: {
     all: ["coupons"] as const,
+    validate: (code: string, subtotalCents: number) => ["coupons", "validate", code, subtotalCents] as const,
   },
 };

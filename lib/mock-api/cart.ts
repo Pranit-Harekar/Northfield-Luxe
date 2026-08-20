@@ -2,7 +2,9 @@
 
 import { getDB } from "../db/schema";
 import type { Cart, CartItem } from "../db/types";
-import { withApiSimulation } from "./client";
+import { isStaffRole } from "../auth/roles";
+import { ApiError, withApiSimulation } from "./client";
+import { getSession } from "./auth";
 
 const GUEST_CART_ID = "guest";
 
@@ -24,6 +26,12 @@ export async function addToCart(
     "POST",
     "/api/cart/items",
     async () => {
+      // Staff accounts manage the catalog, not shop it — block adding items
+      // to the cart at the API layer too, not just in the UI.
+      const session = getSession();
+      if (isStaffRole(session?.role)) {
+        throw new ApiError(403, "Admin accounts cannot add items to the cart.");
+      }
       const db = await getDB();
       const cart = await loadCart(cartId);
       const existingItem = cart.items.find((i) => i.variantId === item.variantId);

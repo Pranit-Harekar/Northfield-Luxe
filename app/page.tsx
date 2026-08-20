@@ -5,6 +5,8 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { useCategories, useProducts } from "@/lib/query/products";
 import { useAddToCart } from "@/lib/query/cart";
+import { useSession } from "@/lib/hooks/useSession";
+import { isStaffRole } from "@/lib/auth/roles";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -22,6 +24,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ProductImage } from "@/components/product-image";
+import Footer from "./footer";
 
 function formatPrice(cents: number): string {
   return `$${(cents / 100).toFixed(2)}`;
@@ -55,6 +59,8 @@ export default function Home() {
   const { data: categories } = useCategories();
   const { data, isLoading } = useProducts({ categoryId, search: search || undefined, sort, page, pageSize: 24 });
   const addToCart = useAddToCart();
+  const session = useSession();
+  const staff = isStaffRole(session?.role);
 
   const parentCategories = categories?.filter((c) => c.parentId === null) ?? [];
   const totalPages = data ? Math.max(1, Math.ceil(data.total / data.pageSize)) : 1;
@@ -69,7 +75,8 @@ export default function Home() {
   }
 
   return (
-    <main className="mx-auto w-full max-w-6xl flex-1 px-6 py-8">
+    <>
+      <main className="mx-auto w-full max-w-6xl flex-1 px-6 py-8">
       <div className="mb-6 flex flex-nowrap items-center gap-3 overflow-x-auto">
         <Input
           type="text"
@@ -138,8 +145,7 @@ export default function Home() {
               return (
                 <Card key={product.id} className="overflow-hidden py-0">
                   <Link href={`/products/${product.id}`} className="block overflow-hidden">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={product.images[0]} alt={product.name} className="aspect-square w-full object-cover" />
+                    <ProductImage src={product.images[0]} alt={product.name} className="aspect-square w-full object-cover" />
                   </Link>
                   <CardHeader className="gap-3">
                     <div className="flex items-start justify-between gap-3">
@@ -162,9 +168,11 @@ export default function Home() {
                   </CardContent>
                   <CardFooter className="justify-between gap-3">
                     <span className="text-base font-semibold">{formatPrice(product.basePriceCents)}</span>
-                    <Button size="sm" onClick={() => handleAddToCart(product.id, firstVariant.id)}>
-                      Add to cart
-                    </Button>
+                    {!staff && (
+                      <Button size="sm" onClick={() => handleAddToCart(product.id, firstVariant.id)}>
+                        Add to cart
+                      </Button>
+                    )}
                   </CardFooter>
                 </Card>
               );
@@ -197,6 +205,8 @@ export default function Home() {
           </CardContent>
         </Card>
       )}
-    </main>
+      </main>
+      <Footer />
+    </>
   );
 }

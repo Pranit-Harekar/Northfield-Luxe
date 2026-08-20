@@ -4,8 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { ArrowUpDown } from "lucide-react";
-import { useSession } from "@/lib/hooks/useSession";
-import { useOrders } from "@/lib/query/orders";
+import { useAllOrders } from "@/lib/query/orders";
 import type { Order, OrderStatus } from "@/lib/db/types";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -58,6 +57,20 @@ const columns: ColumnDef<Order>[] = [
     cell: ({ row }) => <span className="font-medium">#{row.original.id.slice(0, 8)}</span>,
   },
   {
+    accessorKey: "userEmail",
+    header: "Customer",
+    cell: ({ row }) => (
+      <div className="flex items-center gap-2">
+        <span className="text-muted-foreground">{row.original.userEmail || "Unknown"}</span>
+        {row.original.archived && (
+          <Badge variant="outline" className="shrink-0">
+            Account deleted
+          </Badge>
+        )}
+      </div>
+    ),
+  },
+  {
     accessorKey: "createdAt",
     header: ({ column }) => (
       <SortableHeader
@@ -66,9 +79,6 @@ const columns: ColumnDef<Order>[] = [
       />
     ),
     cell: ({ row }) => (
-      // Intentional bug (Category A / orders-table-nowrap): the date column is
-      // capped to a fixed width with whitespace-nowrap and no overflow handling,
-      // so longer localized timestamps get clipped instead of wrapping.
       <span className="block w-24 overflow-hidden whitespace-nowrap text-muted-foreground">
         {new Date(row.original.createdAt).toLocaleString()}
       </span>
@@ -115,7 +125,12 @@ const columns: ColumnDef<Order>[] = [
     enableSorting: false,
     cell: ({ row }) => (
       <div className="text-right">
-        <Button variant="outline" size="sm" nativeButton={false} render={<Link href={`/orders/${row.original.id}`} />}>
+        <Button
+          variant="outline"
+          size="sm"
+          nativeButton={false}
+          render={<Link href={`/admin/orders/${row.original.id}`} />}
+        >
           View details
         </Button>
       </div>
@@ -123,37 +138,26 @@ const columns: ColumnDef<Order>[] = [
   },
 ];
 
-export default function OrdersPage() {
-  const session = useSession();
-
-  const { data: orders, isLoading } = useOrders(session?.userId ?? "");
+export default function AdminOrdersPage() {
+  const { data: orders, isLoading } = useAllOrders();
   const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState<"all" | OrderStatus>("all");
+  const [statusFilter, setStatusFilter] = useState<"all" | Order["status"]>("all");
 
   const filteredOrders = (orders ?? []).filter((order) => {
     const term = search.trim().toLowerCase();
-    const matchesSearch = term ? order.id.toLowerCase().includes(term) : true;
+    const matchesSearch = term
+      ? order.id.toLowerCase().includes(term) || (order.userEmail ?? "").toLowerCase().includes(term)
+      : true;
     const matchesStatus = statusFilter === "all" ? true : order.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
 
-  if (!session) {
-    return (
-      <main className="mx-auto max-w-2xl px-6 py-8 text-sm text-zinc-500">
-        <Button variant="link" size="sm" className="px-0" nativeButton={false} render={<Link href="/login" />}>
-          Log in
-        </Button>{" "}
-        to view your order history.
-      </main>
-    );
-  }
-
   return (
     <main className="mx-auto w-full max-w-6xl flex-1 px-6 py-8">
       <div className="mb-8">
-        <h1 className="text-2xl font-semibold">Order History</h1>
+        <h1 className="text-2xl font-semibold">Order Management</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          View and track everything you&apos;ve ordered from Northfield Luxe.
+          Every order placed across all customers.
         </p>
       </div>
       {isLoading ? (
@@ -171,7 +175,7 @@ export default function OrdersPage() {
         <>
           <div className="mb-4 flex flex-wrap items-center gap-3">
             <Input
-              placeholder="Search by order #…"
+              placeholder="Search by order # or customer email…"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="max-w-xs"
@@ -207,7 +211,7 @@ export default function OrdersPage() {
             <CardTitle>No orders yet</CardTitle>
           </CardHeader>
           <CardContent className="text-sm text-muted-foreground">
-            Place an order from the storefront to see it here.
+            Orders placed on the storefront will show up here.
           </CardContent>
         </Card>
       )}

@@ -4,9 +4,12 @@ import { use, useState } from "react";
 import { toast } from "sonner";
 import { useProduct } from "@/lib/query/products";
 import { useAddToCart } from "@/lib/query/cart";
+import { useSession } from "@/lib/hooks/useSession";
+import { isStaffRole } from "@/lib/auth/roles";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ProductImage } from "@/components/product-image";
 import {
   Select,
   SelectContent,
@@ -24,6 +27,8 @@ export default function ProductDetailPage({ params }: PageProps<"/products/[id]"
   const { id } = use(params);
   const { data: product, isLoading } = useProduct(id);
   const addToCart = useAddToCart();
+  const session = useSession();
+  const staff = isStaffRole(session?.role);
   const [variantId, setVariantId] = useState<string | undefined>(undefined);
 
   async function handleAddToCart(productId: string, selectedVariantId: string) {
@@ -65,8 +70,7 @@ export default function ProductDetailPage({ params }: PageProps<"/products/[id]"
         {/* Intentional bug (Category E / product-image-empty-alt): the primary
             product image has an empty alt attribute, so screen readers miss the
             product identity entirely. */}
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={product.images[0]} alt="" className="aspect-square w-full object-cover" />
+        <ProductImage src={product.images[0]} alt="" className="aspect-square w-full object-cover" />
       </Card>
       <Card>
         <CardHeader className="gap-3">
@@ -105,16 +109,18 @@ export default function ProductDetailPage({ params }: PageProps<"/products/[id]"
 
           <div className="mt-6 flex flex-nowrap items-center gap-4 overflow-x-hidden">
             <span className="text-2xl font-bold">{formatPrice(selectedVariant.priceCents)}</span>
-            <Button
-              onClick={() => handleAddToCart(product.id, selectedVariant.id)}
-              disabled={selectedVariant.stock === 0 || addToCart.isPending}
-              // Intentional bug (Category A / product-cta-overflow): the
-              // purchase CTA is given a fixed wide minimum width inside a
-              // non-wrapping row, so it clips or overflows on narrow screens.
-              className="min-w-64"
-            >
-              {selectedVariant.stock === 0 ? "Out of stock" : addToCart.isPending ? "Adding…" : "Add to cart"}
-            </Button>
+            {!staff && (
+              <Button
+                onClick={() => handleAddToCart(product.id, selectedVariant.id)}
+                disabled={selectedVariant.stock === 0 || addToCart.isPending}
+                // Intentional bug (Category A / product-cta-overflow): the
+                // purchase CTA is given a fixed wide minimum width inside a
+                // non-wrapping row, so it clips or overflows on narrow screens.
+                className="min-w-64"
+              >
+                {selectedVariant.stock === 0 ? "Out of stock" : addToCart.isPending ? "Adding…" : "Add to cart"}
+              </Button>
+            )}
           </div>
         </CardContent>
       </Card>

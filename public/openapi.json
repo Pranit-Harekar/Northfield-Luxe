@@ -1,7 +1,7 @@
 {
   "openapi": "3.0.3",
   "info": {
-    "title": "AtlasCommerce Mock API",
+    "title": "Northfield Luxe Mock API",
     "version": "0.1.0",
     "description": "In-browser mock REST API backed by IndexedDB. All endpoints below are simulated client-side in lib/mock-api — this document describes their contract for QA API testing practice."
   },
@@ -63,14 +63,24 @@
       "get": { "summary": "Get an order by id", "responses": { "200": { "description": "Order" }, "404": { "description": "Not found" } } }
     },
     "/api/orders/{id}/refund": {
-      "post": { "summary": "Refund an order (full or partial)", "responses": { "200": { "description": "Refunded order" } } }
+      "post": { "summary": "Admin: issue a refund for an order (full or partial)", "responses": { "200": { "description": "Refunded order" } } }
+    },
+    "/api/orders/{id}/refund-request": {
+      "post": { "summary": "Customer: request a refund for an order (pending admin review)", "responses": { "200": { "description": "Order marked refund_requested" } } }
+    },
+    "/api/orders/{id}/refund-deny": {
+      "post": { "summary": "Admin: deny a pending refund request", "responses": { "200": { "description": "Order restored to its prior status" } } }
     },
     "/api/coupons": {
       "post": { "summary": "Create a coupon", "responses": { "200": { "description": "Coupon created" } } },
       "get": { "summary": "List coupons", "responses": { "200": { "description": "Coupons" } } }
     },
     "/api/coupons/{id}": {
+      "put": { "summary": "Update a coupon", "responses": { "200": { "description": "Coupon updated" } } },
       "delete": { "summary": "Delete a coupon", "responses": { "200": { "description": "Deleted" } } }
+    },
+    "/api/coupons/validate/{code}": {
+      "get": { "summary": "Validate a coupon code and preview its discount", "responses": { "200": { "description": "Validation result" } } }
     }
   }
 }

@@ -33,7 +33,7 @@ const NOUNS = ["Backpack", "Laptop", "Tablet", "Jacket", "Mug", "Chair", "Headph
 
 // Generic placeholder image shared by every seeded product — random per-product
 // photos don't match the procedurally-generated names/categories.
-export const GENERIC_PRODUCT_IMAGE = "https://placehold.co/480x480/e4e4e7/71717a?text=AtlasCommerce";
+export const GENERIC_PRODUCT_IMAGE = "https://placehold.co/480x480/e4e4e7/71717a?text=Northfield+Luxe";
 
 function rand(min: number, max: number): number {
   return Math.floor(Math.random() * (max - min + 1)) + min;
@@ -184,7 +184,16 @@ function seedWarehouses(): Warehouse[] {
 
 function seedOrders(products: Product[], users: User[], count: number): Order[] {
   const orders: Order[] = [];
-  const STATUSES: OrderStatus[] = ["placed", "processing", "shipped", "delivered", "cancelled", "refunded", "partially_refunded"];
+  const STATUSES: OrderStatus[] = [
+    "placed",
+    "processing",
+    "shipped",
+    "delivered",
+    "cancelled",
+    "refund_requested",
+    "refunded",
+    "partially_refunded",
+  ];
   for (let i = 0; i < count; i++) {
     const user = pick(users);
     const itemCount = rand(1, 4);
@@ -206,6 +215,7 @@ function seedOrders(products: Product[], users: User[], count: number): Order[] 
     orders.push({
       id: uuid(),
       userId: user.id,
+      userEmail: user.email,
       items,
       subtotalCents,
       taxCents,
@@ -300,11 +310,11 @@ function seedBugs(): SeededBug[] {
     },
     {
       id: "bug-ui-orders-card-nowrap",
-      title: "Order history cards clip long content",
+      title: "Order history table clips long content",
       category: "ui",
       severity: "low",
       location: "app/orders/page.tsx",
-      description: "Order summary cards use whitespace-nowrap, so longer order details get clipped instead of wrapping.",
+      description: "The order history date column is a fixed width with whitespace-nowrap and no overflow handling, so longer timestamps get clipped instead of wrapping.",
       active: true,
     },
     {
@@ -408,6 +418,25 @@ function seedBugs(): SeededBug[] {
       severity: "high",
       location: "lib/mock-api/orders.ts:refundOrder",
       description: "Processing a refund clears the order's item list instead of only marking it refunded, destroying the historical record of what was purchased.",
+      active: true,
+    },
+    {
+      id: "bug-data-profile-email-not-normalized",
+      title: "Profile email change isn't normalized before saving",
+      category: "data_integrity",
+      severity: "high",
+      location: "lib/mock-api/auth.ts:updateProfile",
+      description: "Changing your account email persists it exactly as typed instead of lowercasing/trimming it like login and registration do, so a different-case email no longer matches on the next login attempt and locks the user out.",
+      hint: "Change your email to something with capital letters, log out, then log back in using the all-lowercase version — what happens?",
+      active: true,
+    },
+    {
+      id: "bug-sec-password-change-no-verification",
+      title: "Password change doesn't verify the current password",
+      category: "security",
+      severity: "critical",
+      location: "lib/mock-api/auth.ts:changePassword",
+      description: "The change-password endpoint accepts a \"current password\" field from the client but never checks it against the stored password, so any authenticated session can set a new password without proving knowledge of the old one.",
       active: true,
     },
   ];

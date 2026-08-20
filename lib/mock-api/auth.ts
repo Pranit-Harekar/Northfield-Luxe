@@ -138,6 +138,73 @@ export async function resetPassword(email: string): Promise<{ ok: true; temporar
   );
 }
 
+export async function updateProfile(
+  userId: string,
+  patch: { name: string; email: string },
+): Promise<Session> {
+  return withApiSimulation(
+    "PUT",
+    "/api/auth/profile",
+    async () => {
+      const db = await getDB();
+      const user = await db.get("users", userId);
+      if (!user) throw new ApiError(404, "User not found");
+      const updated: User = {
+        ...user,
+        name: patch.name,
+        // Intentional bug (Category C+G / profile-email-not-normalized): unlike
+        // login/register, the new email is persisted exactly as typed instead of
+        // being lowercased/trimmed. If the user saves an email with different
+        // casing, the "by-email" index no longer matches what login looks up
+        // (which always lowercases the input), silently locking them out.
+        email: patch.email,
+      };
+      await db.put("users", updated);
+      const session: Session = {
+        userId: updated.id,
+        email: updated.email,
+        role: updated.role,
+        name: updated.name,
+        password: getSession()?.password,
+      };
+      setSession(session);
+      return session;
+    },
+    patch,
+  );
+}
+
+export async function changePassword(
+  userId: string,
+  currentPassword: string,
+  newPassword: string,
+): Promise<{ ok: true }> {
+  return withApiSimulation(
+    "PUT",
+    "/api/auth/password",
+    async () => {
+      const db = await getDB();
+      const user = await db.get("users", userId);
+      if (!user) throw new ApiError(404, "User not found");
+      // Intentional bug (Category D / security): the current-password value is
+      // accepted from the client but never actually compared against the
+      // stored password before applying the change, so anyone with an active
+      // session can set a new password without proving they know the old one.
+      void currentPassword;
+      user.password = newPassword;
+      await db.put("users", user);
+      const session = getSession();
+      if (session) {
+        // Keeps the (already-bugged) cached session password in sync so the
+        // user isn't logged out, mirroring the login/register behavior.
+        setSession({ ...session, password: newPassword });
+      }
+      return { ok: true as const };
+    },
+    { userId },
+  );
+}
+
 export async function logout(): Promise<void> {
   return withApiSimulation("POST", "/api/auth/logout", async () => {
     setSession(null);
