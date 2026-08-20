@@ -5,6 +5,7 @@ import Link from "next/link";
 import {
   BookOpenText,
   ClipboardList,
+  FileText,
   Info,
   KeyRound,
   RotateCcw,
@@ -47,6 +48,9 @@ const SEEDED_ACCOUNTS = [
   { email: "customer@atlascommerce.test", password: "password123", role: "Customer" },
   { email: "admin@atlascommerce.test", password: "admin123", role: "Admin" },
 ] as const;
+
+const REPO_URL = "https://github.com/Pranit-Harekar/Northfield-Luxe";
+const REQUIREMENTS_URL = `${REPO_URL}/blob/main/requirements.md`;
 
 export function SiteInfoDialog() {
   const [isResetting, setIsResetting] = useState(false);
@@ -159,6 +163,20 @@ export function SiteInfoDialog() {
               >
                 <ClipboardList className="size-3.5" />
                 OpenAPI spec
+              </DialogClose>
+              <DialogClose
+                render={
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    nativeButton={false}
+                    render={<a href={REQUIREMENTS_URL} target="_blank" rel="noopener noreferrer" />}
+                    className="gap-1.5"
+                  />
+                }
+              >
+                <FileText className="size-3.5" />
+                Requirements
               </DialogClose>
             </div>
           </div>
