@@ -44,16 +44,6 @@ export default function SwaggerPage() {
 
   return (
     <main className="flex-1">
-      <div className="mx-auto max-w-5xl px-6 pt-6">
-        <div className="rounded-md border border-blue-500/30 bg-blue-500/10 px-4 py-3 text-sm text-blue-700 dark:text-blue-400">
-          &quot;Execute&quot; here runs directly against this browser tab&apos;s real mock API
-          (IndexedDB) — the same data and logic the rest of the app uses, not a separate
-          server. Changes you make (creating, deleting, refunding, etc.) are real and
-          persist. Logging in here sets the same session used elsewhere in the app. Stock
-          transfers (<code>POST /api/transfers</code>) aren&apos;t implemented anywhere in
-          this sandbox and will return a 501.
-        </div>
-      </div>
       <SwaggerUI url="/openapi.json" />
     </main>
   );
