@@ -6,6 +6,19 @@ import { useCart } from "@/lib/query/cart";
 import { useProducts } from "@/lib/query/products";
 import { usePlaceOrder } from "@/lib/query/orders";
 import { getSession } from "@/lib/mock-api/auth";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 function formatPrice(cents: number): string {
   return `$${(cents / 100).toFixed(2)}`;
@@ -17,6 +30,9 @@ export default function CheckoutPage() {
   const { data: productsPage } = useProducts({ pageSize: 500 });
   const placeOrder = usePlaceOrder();
   const [couponCode, setCouponCode] = useState("");
+  const [fullName, setFullName] = useState("Atlas Customer");
+  const [email, setEmail] = useState("customer@atlascommerce.test");
+  const [shippingMethod, setShippingMethod] = useState("standard");
   const [error, setError] = useState<string | null>(null);
 
   const productsById = useMemo(
@@ -67,39 +83,94 @@ export default function CheckoutPage() {
   }
 
   return (
-    <main className="mx-auto max-w-2xl flex-1 px-6 py-8">
+    <main className="mx-auto max-w-4xl flex-1 px-6 py-8">
       <h1 className="mb-6 text-xl font-semibold">Checkout</h1>
-      <form onSubmit={handlePlaceOrder} className="flex flex-col gap-4">
-        <div>
-          <label className="mb-1 block text-xs font-medium text-zinc-500">Coupon code (optional)</label>
-          <input
-            type="text"
-            value={couponCode}
-            onChange={(e) => setCouponCode(e.target.value)}
-            placeholder="e.g. SAVE10"
-            className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900"
-          />
-        </div>
+      <form onSubmit={handlePlaceOrder} className="grid gap-6 lg:grid-cols-[1.2fr,0.8fr]">
+        <Card>
+          <CardHeader>
+            <CardTitle>Contact and delivery</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <FieldGroup>
+              <Field>
+                <FieldLabel htmlFor="checkout-name">Full name</FieldLabel>
+                <Input id="checkout-name" value={fullName} onChange={(e) => setFullName(e.target.value)} />
+              </Field>
+              <Field>
+                <FieldLabel htmlFor="checkout-email">Email</FieldLabel>
+                <Input id="checkout-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
+              </Field>
+              <Field>
+                <FieldLabel htmlFor="checkout-coupon">Coupon code (optional)</FieldLabel>
+                <Input
+                  id="checkout-coupon"
+                  type="text"
+                  value={couponCode}
+                  onChange={(e) => setCouponCode(e.target.value)}
+                  placeholder="e.g. SAVE10"
+                />
+              </Field>
+              <Field>
+                <FieldLabel>Shipping option</FieldLabel>
+                <Select value={shippingMethod} onValueChange={(value) => setShippingMethod(value ?? "standard")}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="standard">Standard shipping</SelectItem>
+                    <SelectItem value="express">Express shipping</SelectItem>
+                    <SelectItem value="overnight">Overnight shipping</SelectItem>
+                  </SelectContent>
+                </Select>
+              </Field>
+            </FieldGroup>
+          </CardContent>
+        </Card>
 
-        <div className="rounded-lg border border-zinc-200 p-4 text-sm dark:border-zinc-800">
-          <div className="flex justify-between">
-            <span className="text-zinc-500">Subtotal</span>
-            <span>{formatPrice(subtotalCents)}</span>
-          </div>
-          <p className="mt-2 text-xs text-zinc-500">
-            Tax and shipping will be calculated on the confirmation page.
-          </p>
-        </div>
+        <Card>
+          <CardHeader>
+            <CardTitle>Order summary</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-3 text-sm">
+              {orderItems.map((item) => (
+                <div key={item.variantId} className="flex items-center justify-between gap-3">
+                  <div className="space-y-1">
+                    <p className="font-medium">{item.name}</p>
+                    <Badge variant="outline">Qty {item.quantity}</Badge>
+                  </div>
+                  <span>{formatPrice(item.unitPriceCents * item.quantity)}</span>
+                </div>
+              ))}
+            </div>
+            <div className="rounded-lg border border-border bg-muted/30 p-4 text-sm">
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Subtotal</span>
+                <span>{formatPrice(subtotalCents)}</span>
+              </div>
+              <p className="mt-2 text-xs text-muted-foreground">
+                Tax and shipping will be calculated on the confirmation page.
+              </p>
+            </div>
 
-        {error && <p className="text-sm text-red-600">{error}</p>}
+            {error && (
+              <Alert
+                variant="destructive"
+                // Intentional bug (Category E / checkout-error-hidden): checkout
+                // errors are hidden from assistive technology, so screen-reader
+                // users are not informed when submission fails.
+                aria-hidden="true"
+              >
+                <AlertTitle>Checkout error</AlertTitle>
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
 
-        <button
-          type="submit"
-          disabled={placeOrder.isPending}
-          className="rounded-full bg-zinc-900 px-5 py-2 text-sm text-white disabled:opacity-50 dark:bg-white dark:text-black"
-        >
-          {placeOrder.isPending ? "Placing order…" : "Place order"}
-        </button>
+            <Button type="submit" className="w-full" disabled={placeOrder.isPending}>
+              {placeOrder.isPending ? "Placing order…" : "Place order"}
+            </Button>
+          </CardContent>
+        </Card>
       </form>
     </main>
   );

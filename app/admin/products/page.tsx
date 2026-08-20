@@ -1,9 +1,35 @@
 "use client";
 
 import { useState } from "react";
+import { Trash2 } from "lucide-react";
+import { toast } from "sonner";
 import { useCategories, useProducts } from "@/lib/query/products";
 import { useCreateProduct, useDeleteProduct } from "@/lib/query/adminProducts";
 import { GENERIC_PRODUCT_IMAGE } from "@/lib/db/seed";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
+import { TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 function formatPrice(cents: number): string {
   return `$${(cents / 100).toFixed(2)}`;
@@ -34,87 +60,131 @@ export default function AdminProductsPage() {
       rating: 0,
       reviewCount: 0,
     });
+    toast.success("Product created");
     setName("");
     setPriceDollars("");
     setCategoryId("");
   }
 
+  async function handleDelete(productId: string) {
+    await deleteProduct.mutateAsync(productId);
+    toast.success("Product deleted");
+  }
+
   return (
-    <main className="mx-auto max-w-4xl flex-1 px-6 py-8">
+    <main className="mx-auto max-w-5xl flex-1 px-6 py-8">
       <h1 className="mb-6 text-xl font-semibold">Product Management</h1>
 
-      <form onSubmit={handleCreate} className="mb-8 flex flex-wrap items-end gap-3 rounded-lg border border-zinc-200 p-4 dark:border-zinc-800">
-        <div>
-          <label className="mb-1 block text-xs font-medium text-zinc-500">Name</label>
-          <input
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            className="rounded-md border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900"
-          />
-        </div>
-        <div>
-          <label className="mb-1 block text-xs font-medium text-zinc-500">Price (USD)</label>
-          <input
-            value={priceDollars}
-            onChange={(e) => setPriceDollars(e.target.value)}
-            type="number"
-            step="0.01"
-            className="w-28 rounded-md border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900"
-          />
-        </div>
-        <div>
-          <label className="mb-1 block text-xs font-medium text-zinc-500">Category</label>
-          <select
-            value={categoryId}
-            onChange={(e) => setCategoryId(e.target.value)}
-            className="rounded-md border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900"
-          >
-            <option value="">Select…</option>
-            {leafCategories.map((c) => (
-              <option key={c.id} value={c.id}>{c.name}</option>
-            ))}
-          </select>
-        </div>
-        <button
-          type="submit"
-          disabled={createProduct.isPending}
-          className="rounded-full bg-zinc-900 px-4 py-2 text-sm text-white disabled:opacity-50 dark:bg-white dark:text-black"
-        >
-          {createProduct.isPending ? "Creating…" : "Add product"}
-        </button>
-      </form>
+      <Card className="mb-8">
+        <CardHeader>
+          <CardTitle>Create product</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleCreate}>
+            <FieldGroup className="gap-4 md:grid md:grid-cols-[1fr,160px,220px,auto] md:items-end">
+              <Field>
+                <FieldLabel htmlFor="admin-product-name">Name</FieldLabel>
+                <Input
+                  id="admin-product-name"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                />
+              </Field>
+              <Field>
+                <FieldLabel htmlFor="admin-product-price">Price (USD)</FieldLabel>
+                <Input
+                  id="admin-product-price"
+                  value={priceDollars}
+                  onChange={(e) => setPriceDollars(e.target.value)}
+                  type="number"
+                  step="0.01"
+                />
+              </Field>
+              <Field>
+                <FieldLabel>Category</FieldLabel>
+                <Select value={categoryId || "placeholder"} onValueChange={(value) => setCategoryId(value && value !== "placeholder" ? value : "")}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select…" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="placeholder">Select…</SelectItem>
+                    {leafCategories.map((c) => (
+                      <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </Field>
+              <Button type="submit" disabled={createProduct.isPending} className="md:self-end">
+                {createProduct.isPending ? "Creating…" : "Add product"}
+              </Button>
+            </FieldGroup>
+          </form>
+        </CardContent>
+      </Card>
 
-      {isLoading ? (
-        <p className="text-sm text-zinc-500">Loading products…</p>
-      ) : (
-        <table className="w-full text-left text-sm">
-          <thead className="text-xs uppercase text-zinc-500">
-            <tr>
-              <th className="pb-2">Name</th>
-              <th className="pb-2">Price</th>
-              <th className="pb-2">Variants</th>
-              <th className="pb-2"></th>
-            </tr>
-          </thead>
-          <tbody>
-            {data?.items.map((product) => (
-              <tr key={product.id} className="border-t border-zinc-200 dark:border-zinc-800">
-                <td className="py-2">{product.name}</td>
-                <td className="py-2">{formatPrice(product.basePriceCents)}</td>
-                <td className="py-2">{product.variants.length}</td>
-                <td className="py-2 text-right">
-                  <button
-                    onClick={() => deleteProduct.mutate(product.id)}
-                    className="text-xs text-red-600 hover:underline"
-                  >
-                    Delete
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
+      <Card>
+        <CardHeader>
+          <CardTitle>Catalog</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {isLoading ? (
+            <div className="space-y-2">
+              {Array.from({ length: 5 }, (_, index) => <Skeleton key={index} className="h-10 w-full" />)}
+            </div>
+          ) : (
+            <table
+              // Intentional bug (Category A / admin-table-overflow): the product
+              // table now has a fixed minimum width without a scrolling wrapper,
+              // so the admin page overflows horizontally on smaller viewports.
+              className="min-w-[900px] text-left text-sm"
+            >
+              <TableHeader className="text-xs uppercase text-muted-foreground">
+                <TableRow>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Price</TableHead>
+                  <TableHead>Variants</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {data?.items.map((product) => (
+                  <TableRow key={product.id}>
+                    <TableCell className="font-medium">{product.name}</TableCell>
+                    <TableCell>{formatPrice(product.basePriceCents)}</TableCell>
+                    <TableCell>{product.variants.length}</TableCell>
+                    <TableCell className="text-right">
+                      <AlertDialog>
+                        <AlertDialogTrigger
+                          render={
+                            <Button variant="destructive" size="xs" className="ml-auto" />
+                          }
+                        >
+                          <Trash2 className="size-3" />
+                          Delete
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Delete {product.name}?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              This action removes the product from the mock catalog immediately.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction onClick={() => handleDelete(product.id)}>
+                              Delete product
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </table>
+          )}
+        </CardContent>
+      </Card>
     </main>
   );
 }
