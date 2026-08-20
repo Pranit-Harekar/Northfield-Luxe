@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useCategories, useProducts } from "@/lib/query/products";
 import { useCreateProduct, useDeleteProduct } from "@/lib/query/adminProducts";
+import { GENERIC_PRODUCT_IMAGE } from "@/lib/db/seed";
 
 function formatPrice(cents: number): string {
   return `$${(cents / 100).toFixed(2)}`;
@@ -28,7 +29,7 @@ export default function AdminProductsPage() {
       description: `${name} — added via Admin Portal.`,
       categoryId,
       basePriceCents,
-      images: [`https://picsum.photos/seed/${encodeURIComponent(name)}/480/480`],
+      images: [GENERIC_PRODUCT_IMAGE],
       variants: [{ id: crypto.randomUUID(), sku: `SKU-${Date.now()}`, label: "Standard", priceCents: basePriceCents, stock: 25 }],
       rating: 0,
       reviewCount: 0,

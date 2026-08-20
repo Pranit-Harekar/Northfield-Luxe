@@ -31,6 +31,10 @@ const CATEGORY_TREE: Record<string, string[]> = {
 const ADJECTIVES = ["Sleek", "Classic", "Pro", "Ultra", "Everyday", "Premium", "Compact", "Vintage"];
 const NOUNS = ["Backpack", "Laptop", "Tablet", "Jacket", "Mug", "Chair", "Headphones", "Sneakers", "Lamp", "Desk"];
 
+// Generic placeholder image shared by every seeded product — random per-product
+// photos don't match the procedurally-generated names/categories.
+export const GENERIC_PRODUCT_IMAGE = "https://placehold.co/480x480/e4e4e7/71717a?text=AtlasCommerce";
+
 function rand(min: number, max: number): number {
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
@@ -72,7 +76,9 @@ function seedProducts(categories: Category[], count: number): Product[] {
       description: `${name} — a great addition to the ${category.name} lineup. Durable, reliable, and ready to ship.`,
       categoryId: category.id,
       basePriceCents,
-      images: [`https://picsum.photos/seed/${encodeURIComponent(name)}${i}/480/480`],
+      // Use one generic placeholder image for every product for now — per-product
+      // random photos don't visually match the generated product names/categories.
+      images: [GENERIC_PRODUCT_IMAGE],
       variants,
       rating: Math.round((rand(30, 50) / 10) * 10) / 10,
       reviewCount: rand(0, 250),
