@@ -80,10 +80,7 @@ export default function LoginPage() {
               <Label htmlFor="login-password">Password</Label>
               <Input
                 id="login-password"
-                // Password is intentionally visible (not type="password") so
-                // the seeded test-account credentials pre-filled above are
-                // readable at a glance in this sandbox environment.
-                type="text"
+                type="password"
                 placeholder="Password"
                 aria-label=""
                 value={password}
