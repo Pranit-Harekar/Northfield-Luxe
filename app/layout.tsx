@@ -44,13 +44,15 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
             rendered by components that explicitly include them, e.g. the
             hero ad carousel on the shop page, so ads never show up
             elsewhere in the app. Skipped entirely if no publisher id is
-            configured (see NEXT_PUBLIC_ADSENSE_CLIENT_ID in .env.example). */}
+            configured (see NEXT_PUBLIC_ADSENSE_CLIENT_ID in .env.example).
+            strategy="beforeInteractive" so Next.js injects it into <head>,
+            which is what AdSense's site-ownership verification checks for. */}
         {AD_CLIENT && (
           <Script
             async
             src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${AD_CLIENT}`}
             crossOrigin="anonymous"
-            strategy="afterInteractive"
+            strategy="beforeInteractive"
           />
         )}
         <ThemeProvider>
