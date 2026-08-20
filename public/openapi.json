@@ -3,14 +3,14 @@
   "info": {
     "title": "Northfield Luxe Mock API",
     "version": "0.1.0",
-    "description": "In-browser mock REST API backed by IndexedDB. All endpoints below are simulated client-side in lib/mock-api — this document describes their contract for QA API testing practice."
+    "description": "In-browser mock REST API backed by IndexedDB. All endpoints below are simulated client-side in lib/mock-api. \"Execute\" runs these calls for real, directly against this browser tab's IndexedDB and localStorage session — the same data and logic the rest of the app uses, not a separate server. POST /api/transfers has no backing implementation anywhere in the app and always returns 501."
   },
   "paths": {
     "/api/auth/login": {
       "post": {
         "summary": "Log in with email + password",
         "requestBody": {
-          "content": { "application/json": { "schema": { "type": "object", "properties": { "email": { "type": "string" }, "password": { "type": "string" } } } } }
+          "content": { "application/json": { "schema": { "type": "object", "properties": { "email": { "type": "string" }, "password": { "type": "string" } }, "required": ["email", "password"] }, "example": { "email": "customer@atlascommerce.test", "password": "password123" } } }
         },
         "responses": { "200": { "description": "Session created" }, "401": { "description": "Invalid credentials" } }
       }
@@ -18,11 +18,20 @@
     "/api/auth/register": {
       "post": {
         "summary": "Register a new customer account",
+        "requestBody": {
+          "content": { "application/json": { "schema": { "type": "object", "properties": { "email": { "type": "string" }, "password": { "type": "string" }, "name": { "type": "string" } }, "required": ["email", "password", "name"] }, "example": { "email": "new-user@example.com", "password": "changeme123", "name": "New User" } } }
+        },
         "responses": { "200": { "description": "Session created" }, "409": { "description": "Email already registered" } }
       }
     },
     "/api/auth/reset-password": {
-      "post": { "summary": "Request a password reset", "responses": { "200": { "description": "Reset requested" } } }
+      "post": {
+        "summary": "Request a password reset",
+        "requestBody": {
+          "content": { "application/json": { "schema": { "type": "object", "properties": { "email": { "type": "string" } }, "required": ["email"] }, "example": { "email": "customer@atlascommerce.test" } } }
+        },
+        "responses": { "200": { "description": "Reset requested" } }
+      }
     },
     "/api/auth/logout": {
       "post": { "summary": "Log out the current session", "responses": { "200": { "description": "Logged out" } } }
@@ -39,48 +48,149 @@
         ],
         "responses": { "200": { "description": "Paginated product list" } }
       },
-      "post": { "summary": "Create a product", "responses": { "200": { "description": "Product created" } } }
+      "post": {
+        "summary": "Create a product",
+        "requestBody": {
+          "content": { "application/json": { "schema": { "type": "object" }, "example": { "name": "New Product", "description": "A great product.", "categoryId": "", "basePriceCents": 4999, "images": [], "variants": [], "rating": 0, "reviewCount": 0 } } }
+        },
+        "responses": { "200": { "description": "Product created" } }
+      }
     },
     "/api/products/{id}": {
+      "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
       "get": { "summary": "Get a product by id", "responses": { "200": { "description": "Product" }, "404": { "description": "Not found" } } },
-      "put": { "summary": "Update a product", "responses": { "200": { "description": "Updated product" }, "404": { "description": "Not found" } } },
+      "put": {
+        "summary": "Update a product",
+        "requestBody": { "content": { "application/json": { "schema": { "type": "object" }, "example": { "basePriceCents": 5999 } } } },
+        "responses": { "200": { "description": "Updated product" }, "404": { "description": "Not found" } }
+      },
       "delete": { "summary": "Delete a product", "responses": { "200": { "description": "Deleted" } } }
     },
     "/api/inventory": {
       "get": { "summary": "List inventory records", "responses": { "200": { "description": "Inventory records" } } }
     },
     "/api/inventory/{id}": {
-      "put": { "summary": "Update an inventory record", "responses": { "200": { "description": "Updated record" } } }
+      "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+      "put": {
+        "summary": "Update an inventory record",
+        "requestBody": { "content": { "application/json": { "schema": { "type": "object", "properties": { "quantity": { "type": "integer" } } }, "example": { "quantity": 10 } } } },
+        "responses": { "200": { "description": "Updated record" }, "404": { "description": "Not found" } }
+      }
     },
     "/api/transfers": {
-      "post": { "summary": "Create a stock transfer between warehouses", "responses": { "200": { "description": "Transfer created" } } }
+      "post": {
+        "summary": "Create a stock transfer between warehouses",
+        "description": "Not implemented anywhere in this sandbox — always returns 501.",
+        "requestBody": { "content": { "application/json": { "schema": { "type": "object" }, "example": { "variantId": "", "fromWarehouseId": "", "toWarehouseId": "", "quantity": 1 } } } },
+        "responses": { "501": { "description": "Not implemented" } }
+      }
     },
     "/api/orders": {
-      "post": { "summary": "Place an order (checkout)", "responses": { "200": { "description": "Order placed" } } },
-      "get": { "summary": "List orders for the current user", "responses": { "200": { "description": "Orders" } } }
+      "post": {
+        "summary": "Place an order (checkout)",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "userId": { "type": "string" },
+                  "cartId": { "type": "string" },
+                  "couponCode": { "type": "string" },
+                  "items": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "productId": { "type": "string" },
+                        "variantId": { "type": "string" },
+                        "name": { "type": "string" },
+                        "quantity": { "type": "integer" },
+                        "unitPriceCents": { "type": "integer" }
+                      }
+                    }
+                  }
+                },
+                "required": ["userId", "items"]
+              },
+              "example": { "userId": "", "items": [{ "productId": "", "variantId": "", "name": "Sample item", "quantity": 1, "unitPriceCents": 1999 }] }
+            }
+          }
+        },
+        "responses": { "200": { "description": "Order placed" }, "401": { "description": "Not logged in" } }
+      },
+      "get": {
+        "summary": "List orders (own orders for customers, all orders for staff — based on the current session)",
+        "responses": { "200": { "description": "Orders" }, "401": { "description": "Not logged in" } }
+      }
     },
     "/api/orders/{id}": {
+      "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
       "get": { "summary": "Get an order by id", "responses": { "200": { "description": "Order" }, "404": { "description": "Not found" } } }
     },
     "/api/orders/{id}/refund": {
-      "post": { "summary": "Admin: issue a refund for an order (full or partial)", "responses": { "200": { "description": "Refunded order" } } }
+      "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+      "post": {
+        "summary": "Admin: issue a refund for an order (full or partial)",
+        "requestBody": { "content": { "application/json": { "schema": { "type": "object", "properties": { "partial": { "type": "integer", "description": "Partial refund amount in cents; omit for a full refund." } } }, "example": {} } } },
+        "responses": { "200": { "description": "Refunded order" }, "403": { "description": "Not an admin" } }
+      }
     },
     "/api/orders/{id}/refund-request": {
-      "post": { "summary": "Customer: request a refund for an order (pending admin review)", "responses": { "200": { "description": "Order marked refund_requested" } } }
+      "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+      "post": {
+        "summary": "Customer: request a refund for an order (pending admin review)",
+        "requestBody": { "content": { "application/json": { "schema": { "type": "object", "properties": { "partial": { "type": "integer" } } }, "example": {} } } },
+        "responses": { "200": { "description": "Order marked refund_requested" }, "401": { "description": "Not logged in" } }
+      }
     },
     "/api/orders/{id}/refund-deny": {
-      "post": { "summary": "Admin: deny a pending refund request", "responses": { "200": { "description": "Order restored to its prior status" } } }
+      "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+      "post": { "summary": "Admin: deny a pending refund request", "responses": { "200": { "description": "Order restored to its prior status" }, "403": { "description": "Not an admin" } } }
     },
     "/api/coupons": {
-      "post": { "summary": "Create a coupon", "responses": { "200": { "description": "Coupon created" } } },
+      "post": {
+        "summary": "Create a coupon (admin only)",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "code": { "type": "string" },
+                  "type": { "type": "string", "enum": ["percentage", "fixed", "bogo"] },
+                  "value": { "type": "integer", "description": "Percentage (0-100) or fixed cents, depending on type" },
+                  "active": { "type": "boolean" },
+                  "expiresAt": { "type": "string", "nullable": true }
+                },
+                "required": ["code", "type", "value", "active"]
+              },
+              "example": { "code": "TESTCODE", "type": "percentage", "value": 10, "active": true, "expiresAt": null }
+            }
+          }
+        },
+        "responses": { "200": { "description": "Coupon created" }, "403": { "description": "Not an admin" } }
+      },
       "get": { "summary": "List coupons", "responses": { "200": { "description": "Coupons" } } }
     },
     "/api/coupons/{id}": {
-      "put": { "summary": "Update a coupon", "responses": { "200": { "description": "Coupon updated" } } },
-      "delete": { "summary": "Delete a coupon", "responses": { "200": { "description": "Deleted" } } }
+      "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+      "put": {
+        "summary": "Update a coupon (admin only)",
+        "requestBody": { "content": { "application/json": { "schema": { "type": "object" }, "example": { "active": false } } } },
+        "responses": { "200": { "description": "Coupon updated" }, "403": { "description": "Not an admin" } }
+      },
+      "delete": { "summary": "Delete a coupon (admin only)", "responses": { "200": { "description": "Deleted" }, "403": { "description": "Not an admin" } } }
     },
     "/api/coupons/validate/{code}": {
-      "get": { "summary": "Validate a coupon code and preview its discount", "responses": { "200": { "description": "Validation result" } } }
+      "get": {
+        "summary": "Validate a coupon code and preview its discount",
+        "parameters": [
+          { "name": "code", "in": "path", "required": true, "schema": { "type": "string" } },
+          { "name": "subtotalCents", "in": "query", "schema": { "type": "integer" } }
+        ],
+        "responses": { "200": { "description": "Validation result" } }
+      }
     }
   }
 }
