@@ -115,3 +115,75 @@ export interface Warehouse {
   name: string;
   region: string;
 }
+
+// --- Intentional Bug Framework -------------------------------------------
+
+export type BugCategory =
+  | "ui"
+  | "functional"
+  | "api"
+  | "security"
+  | "accessibility"
+  | "performance"
+  | "data_integrity";
+
+export type BugSeverity = "low" | "medium" | "high" | "critical";
+
+/** A registry entry describing one intentionally-seeded defect. */
+export interface SeededBug {
+  id: string;
+  title: string;
+  category: BugCategory;
+  severity: BugSeverity;
+  location: string; // file/function where the bug lives, for QA reference
+  description: string;
+  hint?: string; // shown only in Beginner training mode
+  active: boolean; // Bug Generation Engine can enable/disable per environment
+}
+
+// --- QA Workbench: Test Case Builder --------------------------------------
+
+export interface TestCase {
+  id: string;
+  authorId: string | null;
+  title: string;
+  preconditions: string;
+  steps: string;
+  expectedResult: string;
+  actualResult: string;
+  status: "draft" | "submitted";
+  score: number | null; // completeness score 0-100
+  createdAt: string;
+  updatedAt: string;
+}
+
+// --- QA Workbench: Defect Reporting Module --------------------------------
+
+export type DefectSeverity = "low" | "medium" | "high" | "critical";
+export type DefectPriority = "low" | "medium" | "high" | "urgent";
+
+export interface DefectReport {
+  id: string;
+  authorId: string | null;
+  title: string;
+  severity: DefectSeverity;
+  priority: DefectPriority;
+  steps: string;
+  expectedResult: string;
+  actualResult: string;
+  screenshotDataUrl?: string;
+  matchedBugId: string | null; // best-guess match against the seeded bug registry
+  matchScore: number | null; // 0-1 similarity score of that match
+  createdAt: string;
+}
+
+// --- Gamification ----------------------------------------------------------
+
+/** Per-user progress record. Achievement/level definitions themselves are
+ * static config (see lib/gamification/achievements.ts), not persisted. */
+export interface UserProgress {
+  id: string; // userId or "guest"
+  points: number;
+  achievementsUnlocked: string[]; // AchievementDef ids
+  updatedAt: string;
+}

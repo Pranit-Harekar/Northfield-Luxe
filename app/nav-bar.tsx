@@ -25,6 +25,15 @@ export default function NavBar() {
         <Link href="/admin" className="text-zinc-600 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-white">
           Admin
         </Link>
+        <Link href="/workbench" className="text-zinc-600 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-white">
+          Workbench
+        </Link>
+        <Link href="/testcases" className="text-zinc-600 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-white">
+          Test Cases
+        </Link>
+        <Link href="/defects" className="text-zinc-600 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-white">
+          Defects
+        </Link>
         <Link href="/swagger" className="text-zinc-600 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-white">
           API Docs
         </Link>

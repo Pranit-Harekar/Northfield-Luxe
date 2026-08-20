@@ -13,9 +13,16 @@ export default function AdminPage() {
           <p className="mt-1 text-sm text-zinc-500">Create, edit, and delete catalog products.</p>
         </Link>
         <div className="rounded-lg border border-dashed border-zinc-300 p-5 text-zinc-400 dark:border-zinc-700">
-          <h2 className="font-medium">Inventory, Promotions, Analytics</h2>
+          <h2 className="font-medium">Inventory, Promotions</h2>
           <p className="mt-1 text-sm">Coming soon — future modules build on the same mock API layer.</p>
         </div>
+        <Link
+          href="/admin/analytics"
+          className="rounded-lg border border-zinc-200 p-5 hover:border-zinc-400 dark:border-zinc-800"
+        >
+          <h2 className="font-medium">Analytics Dashboard</h2>
+          <p className="mt-1 text-sm text-zinc-500">Bugs found, API/UI coverage, regression pass rate, testing efficiency.</p>
+        </Link>
       </div>
     </main>
   );

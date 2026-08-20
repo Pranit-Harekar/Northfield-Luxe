@@ -7,16 +7,20 @@ import type {
   Cart,
   Category,
   Coupon,
+  DefectReport,
   InventoryRecord,
   Order,
   Product,
   Review,
+  SeededBug,
+  TestCase,
   User,
+  UserProgress,
   Warehouse,
 } from "./types";
 
 export const DB_NAME = "atlas-commerce";
-export const DB_VERSION = 1;
+export const DB_VERSION = 2;
 
 export interface AtlasDBSchema extends DBSchema {
   products: { key: string; value: Product; indexes: { "by-category": string } };
@@ -29,6 +33,10 @@ export interface AtlasDBSchema extends DBSchema {
   inventory: { key: string; value: InventoryRecord; indexes: { "by-variant": string } };
   warehouses: { key: string; value: Warehouse };
   meta: { key: string; value: { key: string; value: string } };
+  bugs: { key: string; value: SeededBug; indexes: { "by-category": string } };
+  testCases: { key: string; value: TestCase; indexes: { "by-author": string } };
+  defectReports: { key: string; value: DefectReport; indexes: { "by-author": string } };
+  userProgress: { key: string; value: UserProgress };
 }
 
 let dbPromise: Promise<IDBPDatabase<AtlasDBSchema>> | null = null;
@@ -39,32 +47,46 @@ export function getDB(): Promise<IDBPDatabase<AtlasDBSchema>> {
   }
   if (!dbPromise) {
     dbPromise = openDB<AtlasDBSchema>(DB_NAME, DB_VERSION, {
-      upgrade(db) {
-        const products = db.createObjectStore("products", { keyPath: "id" });
-        products.createIndex("by-category", "categoryId");
+      upgrade(db, oldVersion) {
+        if (oldVersion < 1) {
+          const products = db.createObjectStore("products", { keyPath: "id" });
+          products.createIndex("by-category", "categoryId");
 
-        const categories = db.createObjectStore("categories", { keyPath: "id" });
-        categories.createIndex("by-parent", "parentId");
+          const categories = db.createObjectStore("categories", { keyPath: "id" });
+          categories.createIndex("by-parent", "parentId");
 
-        const reviews = db.createObjectStore("reviews", { keyPath: "id" });
-        reviews.createIndex("by-product", "productId");
+          const reviews = db.createObjectStore("reviews", { keyPath: "id" });
+          reviews.createIndex("by-product", "productId");
 
-        const users = db.createObjectStore("users", { keyPath: "id" });
-        users.createIndex("by-email", "email", { unique: true });
+          const users = db.createObjectStore("users", { keyPath: "id" });
+          users.createIndex("by-email", "email", { unique: true });
 
-        db.createObjectStore("carts", { keyPath: "id" });
+          db.createObjectStore("carts", { keyPath: "id" });
 
-        const orders = db.createObjectStore("orders", { keyPath: "id" });
-        orders.createIndex("by-user", "userId");
+          const orders = db.createObjectStore("orders", { keyPath: "id" });
+          orders.createIndex("by-user", "userId");
 
-        const coupons = db.createObjectStore("coupons", { keyPath: "id" });
-        coupons.createIndex("by-code", "code", { unique: true });
+          const coupons = db.createObjectStore("coupons", { keyPath: "id" });
+          coupons.createIndex("by-code", "code", { unique: true });
 
-        const inventory = db.createObjectStore("inventory", { keyPath: "id" });
-        inventory.createIndex("by-variant", "variantId");
+          const inventory = db.createObjectStore("inventory", { keyPath: "id" });
+          inventory.createIndex("by-variant", "variantId");
 
-        db.createObjectStore("warehouses", { keyPath: "id" });
-        db.createObjectStore("meta", { keyPath: "key" });
+          db.createObjectStore("warehouses", { keyPath: "id" });
+          db.createObjectStore("meta", { keyPath: "key" });
+        }
+        if (oldVersion < 2) {
+          const bugs = db.createObjectStore("bugs", { keyPath: "id" });
+          bugs.createIndex("by-category", "category");
+
+          const testCases = db.createObjectStore("testCases", { keyPath: "id" });
+          testCases.createIndex("by-author", "authorId");
+
+          const defectReports = db.createObjectStore("defectReports", { keyPath: "id" });
+          defectReports.createIndex("by-author", "authorId");
+
+          db.createObjectStore("userProgress", { keyPath: "id" });
+        }
       },
     });
   }
