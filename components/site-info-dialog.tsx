@@ -5,6 +5,7 @@ import Link from "next/link";
 import {
   BookOpenText,
   ClipboardList,
+  Code2,
   FileText,
   Info,
   KeyRound,
@@ -177,6 +178,20 @@ export function SiteInfoDialog() {
               >
                 <FileText className="size-3.5" />
                 Requirements
+              </DialogClose>
+              <DialogClose
+                render={
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    nativeButton={false}
+                    render={<a href={REPO_URL} target="_blank" rel="noopener noreferrer" />}
+                    className="gap-1.5"
+                  />
+                }
+              >
+                <Code2 className="size-3.5" />
+                Source on GitHub
               </DialogClose>
             </div>
           </div>
