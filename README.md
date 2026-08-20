@@ -1,3 +1,5 @@
+<img width="2400" height="1350" alt="BrandBird 2026-08-20 21 36 15" src="https://github.com/user-attachments/assets/d2657b8a-1b10-4b7d-bfee-13ee871c54c1" />
+
 # Northfield Luxe
 
 **🔗 Try it now: [northfield-luxe.vercel.app](https://northfield-luxe.vercel.app)** — no installation, no signup, no setup. It seeds its own sample data the moment you open it.
