@@ -30,6 +30,10 @@ export async function listProducts(params: ProductListParams = {}): Promise<Prod
       items = items.filter((p) => p.categoryId === categoryId);
     }
     if (search) {
+      // Intentional bug (Category F / search-extra-delay): every search waits
+      // on an extra blocking delay, making type-ahead product filtering feel
+      // sluggish even for tiny datasets.
+      await new Promise((resolve) => setTimeout(resolve, 1400));
       const needle = search.toLowerCase();
       // Intentional bug (Category C / functional): search only matches the
       // product name, not the description, so relevant results are missed.

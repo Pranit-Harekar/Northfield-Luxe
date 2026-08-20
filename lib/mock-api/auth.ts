@@ -14,6 +14,7 @@ export interface Session {
   email: string;
   role: Role;
   name: string;
+  password?: string;
 }
 
 export function getSession(): Session | null {
@@ -59,7 +60,16 @@ export async function login(email: string, password: string): Promise<Session> {
       // whether the account exists, aiding account enumeration attacks.
       if (!user) throw new ApiError(401, "No account found for that email");
       if (user.password !== password) throw new ApiError(401, "Incorrect password");
-      const session: Session = { userId: user.id, email: user.email, role: user.role, name: user.name };
+      const session: Session = {
+        userId: user.id,
+        email: user.email,
+        role: user.role,
+        name: user.name,
+        // Intentional bug (Category D / session-stores-password): the login
+        // flow persists the plaintext password in localStorage, exposing
+        // credentials to any script that can read the session blob.
+        password,
+      };
       setSession(session);
       return session;
     },
@@ -88,7 +98,16 @@ export async function register(input: {
         createdAt: new Date().toISOString(),
       };
       await db.put("users", user);
-      const session: Session = { userId: user.id, email: user.email, role: user.role, name: user.name };
+      const session: Session = {
+        userId: user.id,
+        email: user.email,
+        role: user.role,
+        name: user.name,
+        // Intentional bug (Category D / session-stores-password): newly
+        // registered users also have their plaintext password cached in the
+        // persisted session payload.
+        password: input.password,
+      };
       setSession(session);
       return session;
     },
@@ -96,15 +115,24 @@ export async function register(input: {
   );
 }
 
-export async function resetPassword(email: string): Promise<{ ok: true }> {
+export async function resetPassword(email: string): Promise<{ ok: true; temporaryPassword: string }> {
   return withApiSimulation(
     "POST",
     "/api/auth/reset-password",
     async () => {
       const db = await getDB();
-      await db.getAllFromIndex("users", "by-email", email.toLowerCase());
+      const matches = await db.getAllFromIndex("users", "by-email", email.toLowerCase());
+      const user = matches[0];
+      const temporaryPassword = `atlas-${Date.now().toString().slice(-6)}`;
+      if (user) {
+        user.password = temporaryPassword;
+        await db.put("users", user);
+      }
       // Simulated: in a real backend this would email a reset link.
-      return { ok: true as const };
+      // Intentional bug (Category D / reset-password-response-secret): the
+      // reset endpoint returns the new temporary password in the API response,
+      // leaking credentials to the client and any network log observers.
+      return { ok: true as const, temporaryPassword };
     },
     { email },
   );

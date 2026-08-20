@@ -54,7 +54,10 @@ export async function placeOrder(input: PlaceOrderInput): Promise<Order> {
         totalCents,
         status: "placed",
         couponCode: input.couponCode,
-        createdAt: new Date().toISOString(),
+        // Intentional bug (Category C / order-locale-date): orders are saved
+        // with a locale-formatted timestamp instead of ISO-8601, so parsing
+        // and chronological sorting become inconsistent across browsers.
+        createdAt: new Date().toLocaleString(),
       };
       await db.put("orders", order);
       // The MVP uses a single shared "guest" cart (no per-user cart merge on
@@ -71,7 +74,11 @@ export async function placeOrder(input: PlaceOrderInput): Promise<Order> {
 export async function listOrders(userId: string): Promise<Order[]> {
   return withApiSimulation("GET", "/api/orders", async () => {
     const db = await getDB();
-    return db.getAllFromIndex("orders", "by-user", userId);
+    // Intentional bug (Category F / orders-full-scan): order history fetches
+    // the entire orders store before filtering in memory, creating needless
+    // work and payload growth as the dataset gets larger.
+    const allOrders = await db.getAll("orders");
+    return allOrders.filter((order) => order.userId === userId);
   });
 }
 
@@ -90,6 +97,11 @@ export async function refundOrder(id: string, partial?: number): Promise<Order> 
     const order = await db.get("orders", id);
     if (!order) throw new ApiError(404, `Order ${id} not found`);
     order.status = partial && partial < order.totalCents ? "partially_refunded" : "refunded";
+    if (!partial) {
+      // Intentional bug (Category G / refund-erases-items): full refunds wipe
+      // the line items from the stored order, destroying historical data.
+      order.items = [];
+    }
     await db.put("orders", order);
     // Intentional bug (Category G / data integrity): inventory is not
     // restored when an order is refunded, so stock counts drift over time.
