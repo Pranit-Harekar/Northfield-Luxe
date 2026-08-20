@@ -1,0 +1,76 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "AtlasCommerce Mock API",
+    "version": "0.1.0",
+    "description": "In-browser mock REST API backed by IndexedDB. All endpoints below are simulated client-side in lib/mock-api — this document describes their contract for QA API testing practice."
+  },
+  "paths": {
+    "/api/auth/login": {
+      "post": {
+        "summary": "Log in with email + password",
+        "requestBody": {
+          "content": { "application/json": { "schema": { "type": "object", "properties": { "email": { "type": "string" }, "password": { "type": "string" } } } } }
+        },
+        "responses": { "200": { "description": "Session created" }, "401": { "description": "Invalid credentials" } }
+      }
+    },
+    "/api/auth/register": {
+      "post": {
+        "summary": "Register a new customer account",
+        "responses": { "200": { "description": "Session created" }, "409": { "description": "Email already registered" } }
+      }
+    },
+    "/api/auth/reset-password": {
+      "post": { "summary": "Request a password reset", "responses": { "200": { "description": "Reset requested" } } }
+    },
+    "/api/auth/logout": {
+      "post": { "summary": "Log out the current session", "responses": { "200": { "description": "Logged out" } } }
+    },
+    "/api/products": {
+      "get": {
+        "summary": "List products",
+        "parameters": [
+          { "name": "categoryId", "in": "query", "schema": { "type": "string" } },
+          { "name": "search", "in": "query", "schema": { "type": "string" } },
+          { "name": "page", "in": "query", "schema": { "type": "integer" } },
+          { "name": "pageSize", "in": "query", "schema": { "type": "integer" } },
+          { "name": "sort", "in": "query", "schema": { "type": "string", "enum": ["price-asc", "price-desc", "rating", "newest"] } }
+        ],
+        "responses": { "200": { "description": "Paginated product list" } }
+      },
+      "post": { "summary": "Create a product", "responses": { "200": { "description": "Product created" } } }
+    },
+    "/api/products/{id}": {
+      "get": { "summary": "Get a product by id", "responses": { "200": { "description": "Product" }, "404": { "description": "Not found" } } },
+      "put": { "summary": "Update a product", "responses": { "200": { "description": "Updated product" }, "404": { "description": "Not found" } } },
+      "delete": { "summary": "Delete a product", "responses": { "200": { "description": "Deleted" } } }
+    },
+    "/api/inventory": {
+      "get": { "summary": "List inventory records", "responses": { "200": { "description": "Inventory records" } } }
+    },
+    "/api/inventory/{id}": {
+      "put": { "summary": "Update an inventory record", "responses": { "200": { "description": "Updated record" } } }
+    },
+    "/api/transfers": {
+      "post": { "summary": "Create a stock transfer between warehouses", "responses": { "200": { "description": "Transfer created" } } }
+    },
+    "/api/orders": {
+      "post": { "summary": "Place an order (checkout)", "responses": { "200": { "description": "Order placed" } } },
+      "get": { "summary": "List orders for the current user", "responses": { "200": { "description": "Orders" } } }
+    },
+    "/api/orders/{id}": {
+      "get": { "summary": "Get an order by id", "responses": { "200": { "description": "Order" }, "404": { "description": "Not found" } } }
+    },
+    "/api/orders/{id}/refund": {
+      "post": { "summary": "Refund an order (full or partial)", "responses": { "200": { "description": "Refunded order" } } }
+    },
+    "/api/coupons": {
+      "post": { "summary": "Create a coupon", "responses": { "200": { "description": "Coupon created" } } },
+      "get": { "summary": "List coupons", "responses": { "200": { "description": "Coupons" } } }
+    },
+    "/api/coupons/{id}": {
+      "delete": { "summary": "Delete a coupon", "responses": { "200": { "description": "Deleted" } } }
+    }
+  }
+}
