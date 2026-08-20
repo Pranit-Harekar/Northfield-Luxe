@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Script from "next/script";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import Providers from "./providers";
@@ -38,23 +37,28 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       suppressHydrationWarning
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col bg-background text-foreground">
-        {/* AdSense loader — this only loads the library; it renders nothing
-            itself. Actual ad slots (<ins class="adsbygoogle">) are only
-            rendered by components that explicitly include them, e.g. the
-            hero ad carousel on the shop page, so ads never show up
-            elsewhere in the app. Skipped entirely if no publisher id is
-            configured (see NEXT_PUBLIC_ADSENSE_CLIENT_ID in .env.example).
-            strategy="beforeInteractive" so Next.js injects it into <head>,
-            which is what AdSense's site-ownership verification checks for. */}
+      <head>
+        {/* AdSense loader — a plain, literal <script> tag (not next/script)
+            so it renders verbatim in the server HTML inside <head>. This is
+            required for AdSense's site-ownership verification, which fetches
+            the raw HTML and looks for this exact tag — next/script's Script
+            component instead emits a <link rel="preload"> plus a runtime JS
+            push, which never appears as a literal <script src> and fails
+            verification. This tag only loads the library (invisible); actual
+            ad slots (<ins class="adsbygoogle">) are only rendered by
+            components that explicitly include them, e.g. the hero ad
+            carousel on the shop page, so ads never show up elsewhere in the
+            app. Skipped entirely if no publisher id is configured (see
+            NEXT_PUBLIC_ADSENSE_CLIENT_ID in .env.example). */}
         {AD_CLIENT && (
-          <Script
+          <script
             async
             src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${AD_CLIENT}`}
             crossOrigin="anonymous"
-            strategy="beforeInteractive"
           />
         )}
+      </head>
+      <body className="min-h-full flex flex-col bg-background text-foreground">
         <ThemeProvider>
           <Providers>
             <TooltipProvider>
