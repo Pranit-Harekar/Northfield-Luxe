@@ -78,6 +78,10 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000). The app seeds its own data on first load — no database setup required.
 
+### Optional: AdSense hero carousel
+
+The shop page has a small hero ad carousel above the product grid. It's entirely optional and self-disables — copy [`.env.example`](./.env.example) to `.env.local` and fill in your own `NEXT_PUBLIC_ADSENSE_CLIENT_ID` / `NEXT_PUBLIC_ADSENSE_HERO_SLOT_ID` to enable it. Never commit real AdSense ids — `.env.local` is git-ignored.
+
 ## License
 
 MIT — see [LICENSE](./LICENSE).

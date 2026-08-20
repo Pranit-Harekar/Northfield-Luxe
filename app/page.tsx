@@ -25,6 +25,7 @@ import {
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ProductImage } from "@/components/product-image";
+import { HeroAdCarousel } from "@/components/hero-ad-carousel";
 import Footer from "./footer";
 
 function formatPrice(cents: number): string {
@@ -77,6 +78,7 @@ export default function Home() {
   return (
     <>
       <main className="mx-auto w-full max-w-6xl flex-1 px-6 py-8">
+      <HeroAdCarousel />
       <div className="mb-6 flex flex-nowrap items-center gap-3 overflow-x-auto">
         <Input
           type="text"
